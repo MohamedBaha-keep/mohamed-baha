@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Egente Real Estate</title>
+  <link rel="stylesheet" href="styles1.css" />
+
+  <!-- Link to Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+</head>
+<body>
+
+  <!-- Header -->
+   
+  <header class="header">
+
+    <div class="logo-header">
+    <img src="./nouackshoot/images/logo.png" alt="Beytee Logo">
+    <h1>beytee</h1>
+  </div>
+
+    <nav>
+      <!-- <a href="#contact">اتصل بنا</a>
+      <a href="#policies">السياسات</a> -->
+      
+     <button class="post-button " onclick="window.location.href='./contactforposting/index.html'"> 
+      <i class="fas fa-paper-plane">اريد عرض  </i></button>
+
+    </nav>
+  </header>
+
+
+
+  <div class="search-container">
+    <h2 class="name">قد تجد ما يرضيك </h2>
+    <span class="icon search-icon">&#128269;</span> 
+  <input type="text" id="stateSearch" placeholder="ابحث عن ولاية..." oninput="filterStates()" onclick="showSuggestions()" autocomplete="off">
+  <ul id="suggestions" class="suggestions-list hidden"></ul>
+</div> 
+
+
+
+
+  
+
+ 
+   <!-- for mr flage -->
+
+    <div class="map-container">
+            <img src= "./nouackshoot/images/chingi.webp" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"> 
+        </div> 
+
+
+
+  <!-- Footer -->
+  <footer>
+     
+
+
+    </div>
+
+    <div class="footer-content">
+      <div>
+        <h3>معلومات الشركة</h3>
+        <p>العنوان: نواكشوط، موريتانيا</p>
+        <p>الهاتف: +222 12345678<img src="./ttt/images/call.png"></p>
+        <p>البريد: info@egente.mr</p>
+      </div>
+      <div>
+        <h3>روابط</h3>
+        <a href="#privacy">سياسة الخصوصية</a><br/>
+        <a href="#terms">شروط الاستخدام</a>
+      </div>
+      <div>
+        <h3>تابعنا</h3>
+        <div class="social-m"><img src="./ttt/images/facebook_icon-icons.com_59205.png">
+          <a href="#">Mohamed_Baha</a>
+        </div>
+        <a href="#">Twitter</a><br/>
+        <a href="#">Instagram</a>
+      </div>
+    </div>
+    <div class="footer-logo">@ 2025 mohamed baha</div>
+  </footer>
+    
+  <!--   javascript  -->
+
+
+  <script>
+
+
+const states = ["نواكشوط", "نواذيبو", "أطار", "تجكجة", "سيلبابي", "كيفة", "اكجوجت", "روصو", "النعمة", "الزويرات"];
+const suggestionsBox = document.getElementById("suggestions");
+const searchInput = document.getElementById("stateSearch");
+
+function filterStates() {
+  const query = searchInput.value.toLowerCase();
+  const filtered = states.filter(state => state.toLowerCase().includes(query));
+  
+  renderSuggestions(filtered);
+}
+
+function renderSuggestions(list) {
+  suggestionsBox.innerHTML = "";
+  if (list.length === 0) {
+    suggestionsBox.classList.add("hidden");
+    return;
+  }
+
+  list.forEach(state => {
+    const li = document.createElement("li");
+    li.textContent = state;
+
+    li.onclick = () => {
+      searchInput.value = state;
+      suggestionsBox.classList.add("hidden");
+
+    
+      const stateURL = encodeURIComponent(state);
+
+      //states if clicked    
+
+      if (state === "نواكشوط") {
+        window.location.href = "/nouackshoot/index.html";
+      } else {
+       window.location.href = `states/${stateURL}.html`;
+      }
+    };
+
+    suggestionsBox.appendChild(li); // <-- You missed this part too!
+  });
+
+  suggestionsBox.classList.remove("hidden");
+}
+
+function showSuggestions() {
+  filterStates();
+}
+
+// Hide on click outside
+document.addEventListener("click", function (e) {
+  if (!e.target.closest(".search-container")) {
+    suggestionsBox.classList.add("hidden");
+  }
+});
+
+
+  </script>
+</body>
+</html>

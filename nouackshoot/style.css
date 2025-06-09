@@ -1,0 +1,294 @@
+:root{
+  --white: #FFFFFF;
+--yellow: #F6BD26;
+--primary-100: #2179FF;
+--primary-90: #1E6DE5;
+--primary-80: #1B61CC;
+--primary-70: #1755B2;
+--primary-40: #0D3166;
+--primary-20: #071833;
+--secondary-100: #21FFFF;
+--secondary-20: #073333;
+--neutral-100: #FAFCFF;
+--neutral-98: #F2F5FA;
+--neutral-95: #E9ECF2;
+--neutral-90: #DADFE5;
+--neutral-80: #C2C6CC;
+--neutral-60: #919499;
+--neutral-50: #797C80;
+--neutral-40: #616366;
+--neutral-30: #494A4D;
+--neutral-20: #303133;
+--neutral-10: #18191A;
+--neutral-5: #0C0C0D;
+--error-100: #FF2134;
+
+--gradient: linear-gradient(270deg, #0F4392 0%, #001d3d 100%);
+
+/* typo 
+*/
+
+/* font family  */
+--font-primary: 'Montserrat', sans-serif;
+
+/* fomt size */
+--fs-base: 62.5%;
+--fs-headline-large: 3.6rem;
+--fs-headline-medium: 2.8rem;
+--fs-headline-small: 2.8rem;
+--fs-title-large: 2.2rem;
+--fs-title-medium: 2rem;
+--fs-title-small: 1.8rem;
+--fs-body-large: 1.6rem;
+--fs-body-medium: 1.6rem;
+--fs-label-large: 1.6rem;
+--fs-label-medium: 1.4rem;
+
+/*  line height */
+
+--lh-headline-large: 44px;
+--lh-headline-medium: 36px;
+--lh-headline-small: 36px;
+--lh-title-large: 28px;
+--lh-title-medium: 24px;
+--lh-title-small: 24px;
+--lh-body-large: 24px;
+--lh-body-medium: 24px;
+--lh-label-large: 24px;
+--lh-label-medium: 20px;
+
+/* font wheight */
+
+--weight-bold: 700;
+--weight-semiBold: 600;
+--weight-regular: 400;
+
+/* lettere spacing */
+
+--traking-n-025: -0.25px;
+--traking-p-05: 0.5px;
+
+/* radius */
+
+--radius-small: 8px;
+--radius-medium: 12px;
+--radius-large: 16px;
+--radius-extra-large: 32px;
+--radius-full: 1000px;
+--radius-circle: 50%;
+
+/* shadow */
+
+--shadow-1: 0px 2px 4px 0px #00000033;
+--shadow-2: 0px 5px 10px 0px #0000000D;
+--shadow-3: 0px 5px 10px 0px #00000033;
+--shadow-4: 0px 10px 20px 0px #0000001A;
+
+/* transition */
+--transition-easing-quick: cubic-bezier(0, 0.7, 0.3, 1);
+--transition-duration-quick: 200ms;
+--transition-duration-smooth: 500ms;
+
+}
+
+
+
+
+
+
+
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: var(--gradient);
+
+}
+
+header {
+  background: #003366;
+  color: rgb(248, 248, 248);
+  padding: 1rem;
+  text-align: center;
+}
+
+.filters {
+
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+
+
+
+}
+
+select {
+  padding: 8px;
+  font-size: 1rem;
+  text-align: start;
+  font-weight: 500;
+  font-size: 20px;
+  color: #073333;
+
+}
+
+.obt{
+
+  color: rgb(1, 44, 1) ;
+  font-size: 20px;
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  font-weight: bold;
+  
+}
+
+main {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  padding: 20px;
+  gap: 20px;
+  
+}
+
+
+/* ----descriptions for card */
+.house-card {
+  text-align: center;
+  background: rgb(236, 241, 243);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.house-card img {
+  width: 90%;
+  height: 180px;
+  object-fit: cover;
+}
+h2{
+  margin: 7px;
+  border-radius: 20px;
+  text-align: center;
+  background-color: rgb(11, 173, 173);
+  color:var();
+}
+.house-card button{
+  font-size: 20px;
+  font-weight: bold;
+  color: rgb(133, 175, 65);
+}
+
+.house-card .info {
+  
+  padding: 10px;
+}
+
+
+
+.house-card .info h3 {
+  margin: 0 0 5px;
+}
+
+.house-card .info p {
+  margin: 0;
+  color: #555;
+}
+
+
+.read-more, .read-less {
+  color: blue;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+
+/* ----descriptions for card */
+
+
+
+/* ----- for image slide */
+
+.lightbox {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  /* background: rgba(0,0,0,0.8); */
+  background-color: var(--neutral-95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  z-index: 1000;
+}
+
+.lightbox img {
+  max-width: 90%;
+  max-height:80vh;
+  border-radius: 10px;
+  
+}
+
+.lightbox .close {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  color: black;
+  font-size: 80px;
+  cursor: pointer;
+}
+
+.lightbox .nav {
+  margin-top: 10px;
+
+}
+
+.lightbox .nav button {
+  padding: 10px 20px;
+  font-size: 2.6rem;
+  margin: 10px 20px;
+  cursor: pointer;
+  border-radius: 20px;
+  border: none;
+  color: black;
+  background-color: var(--primary-70);
+  
+
+}
+.lightbox .nav button:hover{
+  background-color: var(--primary-40);
+  border: none;
+  border-radius: 20px;
+}
+
+.hidden {
+  display: none;
+}
+
+
+/* ----- for image slide */
+
+
+/* ---- for card icons ------ */
+
+.icons {
+  font-weight: bold;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap; 
+  margin-top: 10px; 
+  margin-bottom: 15px;
+  font-size: 14px;
+  color: var(--primary-40);
+  
+}
+.icons span:hover{
+  color: #073333;
+  cursor: pointer;
+}
+
+.icons i {
+  margin-left: 5px;
+}
+
+
+

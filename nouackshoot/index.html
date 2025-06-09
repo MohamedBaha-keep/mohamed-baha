@@ -1,0 +1,73 @@
+
+<!DOCTYPE html>
+<html lang="an">
+<head>
+  <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>baha</title>
+    <meta name="title" content="beytee">
+   <meta name="descripttion" content=" beytee devloped by baha ">
+
+<!-- ** links ----->
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css" />
+
+  
+</head>
+<body>
+  <header>
+
+         <!-- for obtions -->
+
+
+    <h1>اختر المنطقة</h1>
+    <div class="filters">
+      <select id="typeFilter">
+        <option class="obt" value="all">شراء او استئجار</option>
+        <option class="obt" value="buy">شراء</option>
+        <option class="obt" value="rent">استئجار</option>
+        <option class="obt" value="land">أراضي للبيع</option>
+      </select>
+
+       <!-- for obtions -->
+          
+
+
+        <!-- for citys in nkc -->
+
+
+      <select id="cityFilter">
+        <option class="obt" value="all">جميع المناطق</option>
+        <option class="obt" value="عين الطلح">عين الطلح</option>
+        <option class="obt" value="عرفات">عرفات</option>
+        <option class="obt" value="الصحراوي">الصحراوي</option>
+      </select>
+    </div>
+  </header>
+
+       <!-- for citys in nkc -->
+
+
+
+
+        <!-- for images slides  -->
+
+  <main id="houseList"></main>
+
+  <div id="lightbox" class="lightbox hidden">
+  <span class="close" onclick="closeGallery()">&times;</span>
+  <img  id="lightboxImg" src="" alt="Gallery image" />
+  <div class="nav">
+    <button onclick="prevImage()">&#8592;</button>
+    <button onclick="nextImage()">&#8594;</button>
+  </div>
+</div>
+   <!-- for images slides  -->
+
+
+
+  <script src="main.js"></script>
+</body>
+</html>
