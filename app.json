@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "beytee",
+    "slug": "app-beytee",
+    "scheme": "beytee",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#06214e"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "ios": {
+      "bundleIdentifier": "com.mohamedbaha.beytee",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "نحتاج لاستخدام الكاميرا لرفع الصور.",
+        "NSPhotoLibraryUsageDescription": "نحتاج إلى إذن للوصول إلى الصور من أجل رفعها في الإعلان.",
+        "NSLocationWhenInUseUsageDescription": "نستخدم موقعك لعرض المنازل القريبة منك.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        },
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.mohamedbaha.beytee",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "https",
+              "host": "mohamedbaha-keep.github.io",
+              "pathPrefix": "/beytee"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "plugins": ["expo-image-picker"],
+    "extra": {
+      "eas": {
+        "projectId": "200cfaa0-96e2-4d89-b2aa-edd8f3e0a5b0"
+      }
+    }
+  }
+}
