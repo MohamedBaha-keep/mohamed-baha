@@ -32,7 +32,8 @@ const firebaseConfig = {
   apiKey: "AIzaSyDoQa08An-qFnPSq9nYuG4yTf7G3m4xKAM",
   authDomain: "beyteeapp-4c81b.firebaseapp.com",
   projectId: "beyteeapp-4c81b",
-  storageBucket: "beyteeapp-4c81b.firebasestorage.app",
+  // storageBucket: "beyteeapp-4c81b.firebasestorage.app",
+  storageBucket: "beyteeapp-4c81b.appspot.com",
   messagingSenderId: "896634042113",
   appId: "1:896634042113:web:6f8f76b990d7ff4ed34d00",
   measurementId: "G-TXS9845REB"

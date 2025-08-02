@@ -25,6 +25,9 @@
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
         },
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -34,7 +37,8 @@
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "NOTIFICATIONS"
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
@@ -50,11 +54,24 @@
               "pathPrefix": "/beytee"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
-    "plugins": ["expo-image-picker"],
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "15.1"
+          }
+        }
+      ],
+      "expo-image-picker"
+    ],
     "extra": {
       "eas": {
         "projectId": "200cfaa0-96e2-4d89-b2aa-edd8f3e0a5b0"

@@ -1,5 +1,4 @@
 
-
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import {
   View,
@@ -43,14 +42,51 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import MapView, { Marker } from 'react-native-maps';
 
 import * as FileSystem from 'expo-file-system';
+import * as Notifications from 'expo-notifications';
 
 
-
+import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+// import messaging from '@react-native-firebase/messaging';
 
 
+import * as Device from 'expo-device';
 
 
+// notification 
+
+// Request permission & get token
+
+export async function registerForPushNotificationsAsync() {
+  let token;
+  if (Device.isDevice) {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== 'granted') {
+      alert('Failed to get push token!');
+      return;
+    }
+    token = (await Notifications.getExpoPushTokenAsync()).data;
+    console.log('Expo Push Token:', token);
+  } else {
+    alert('Must use physical device for Push Notifications');
+  }
+
+  if (Platform.OS === 'android') {
+    Notifications.setNotificationChannelAsync('default', {
+      name: 'default',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+    });
+  }
+
+  return token;
+}
 
 
 
@@ -523,7 +559,7 @@ refreshControl={
       style={styles.carButton}
       onPress={() => navigation.navigate('CarsScreen')}
 >
-     <Text style={styles.carButtonText}>🚗 قائمة السيارات</Text>
+     <Text style={styles.carButtonText}> قائمة السيارات</Text>
    </TouchableOpacity>
 
 
@@ -565,7 +601,6 @@ function NouakchottScreen() {
   const [selectedImages, setSelectedImages] = useState([]);
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
 
 
 
@@ -1118,7 +1153,7 @@ renderItem={({ item }) => (
     </View>
   </View>
 
-      // tst
+      
 
       
 
@@ -1178,13 +1213,16 @@ function MainTabs() {
         headerShown: false,
         tabBarStyle: {
           backgroundColor: '#fff',
-          paddingBottom: 5,
-          height: 65,
-          marginBottom:15,
+          // paddingBottom: 5,
+          // height: 50,
+          // marginBottom:25,
+         
         },
         tabBarLabelStyle: {
           fontSize: 12,
+          
         },
+        
       })}
     >
       <Tab.Screen name="الرئيسية" component={HomeScreen} />
@@ -1199,8 +1237,72 @@ function MainTabs() {
 
 
 // App with stack navigator
-
 export default function App() {
+  const [expoPushToken, setExpoPushToken] = useState('');
+  const notificationListener = useRef();
+  const responseListener = useRef();
+
+  useEffect(() => {
+    registerForPushNotificationsAsync().then(token => setExpoPushToken(token));
+
+    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Notification Received:', notification);
+    });
+
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('Notification Response:', response);
+    });
+
+    return () => {
+      if (notificationListener.current) Notifications.removeNotificationSubscription(notificationListener.current);
+      if (responseListener.current) Notifications.removeNotificationSubscription(responseListener.current);
+    };
+  }, []);
+
+  async function registerForPushNotificationsAsync() {
+    let token;
+    if (!Device.isDevice) {
+      Alert.alert('يجب استخدام جهاز حقيقي للحصول على إشعارات الدفع.');
+      return;
+    }
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== 'granted') {
+      Alert.alert('فشل الحصول على إذن الإشعارات!');
+      return;
+    }
+    token = (await Notifications.getExpoPushTokenAsync()).data;
+    console.log('Expo Push Token:', token);
+
+    const tokenId = token.replace(/[^a-zA-Z0-9]/g, '');
+    await setDoc(doc(db, 'tokens', tokenId), {
+      token,
+      platform: Platform.OS,
+      createdAt: new Date(),
+    });
+
+    return token;
+  }
+
+// export default function App() {
+//   return (
+//     <NavigationContainer>
+//       <Stack.Navigator screenOptions={{ headerShown: false }}>
+//         <Stack.Screen name="MainTabs" component={MainTabs} />
+//         <Stack.Screen name="Nouakchott" component={NouakchottScreen} />
+//         <Stack.Screen name="CarsScreen" component={CarsScreen} />
+//       </Stack.Navigator>
+//     </NavigationContainer>
+//   );
+// }
+
+
+
+
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -1214,13 +1316,17 @@ export default function App() {
 
 
 
+// favorite -------------
 
-// favorite 
 
 
 function FavoritesScreen() {
   const [favorites, setFavorites] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   const loadFavorites = async () => {
     try {
@@ -1232,10 +1338,12 @@ function FavoritesScreen() {
     }
   };
 
-  useEffect(() => {
-    loadFavorites();
-  }, []);
-
+  useFocusEffect(
+    React.useCallback(() => {
+      loadFavorites();
+    }, [])
+  );
+  
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadFavorites();
@@ -1255,47 +1363,203 @@ function FavoritesScreen() {
       },
     ]);
   };
-
   const renderItem = ({ item }) => (
-    <View style={{ padding: 10, backgroundColor: '#fff', marginBottom: 10 }}>
-      {item.images?.[0] && (
-        <Image
-          source={{ uri: item.images[0] }}
-          style={{ width: '100%', height: 180, borderRadius: 8 }}
-        />
-      )}
-      <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{item.name || item.title}</Text>
-      <Text>{item.location}</Text>
-      <Text>{item.phone}</Text>
-      <TouchableOpacity
-        onPress={() => removeFavorite(item.id)}
-        style={{ marginTop: 8, padding: 8, backgroundColor: '#f44', borderRadius: 5 }}
-      >
-        <Text style={{ color: 'white', textAlign: 'center' }}>🗑️ حذف</Text>
-      </TouchableOpacity>
+   
+ 
+    <View style={{ backgroundColor: '#fff', marginBottom: 20, borderRadius: 12, overflow: 'hidden', elevation: 3,marginTop:60}}>
+      {/* Image Scroll */}
+      <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
+        {item.images?.map((uri, index) => (
+          <TouchableOpacity
+            key={index}
+            onPress={() => {
+              setSelectedImages(item.images);
+              setCurrentImageIndex(index);
+              setImageViewerVisible(true);
+            }}
+          >
+            <Image
+              source={{ uri }}
+              style={{ width: Dimensions.get('window').width - 40, height: 200 }}
+              resizeMode="cover"
+            />
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* Card Content */}
+      <View style={{ padding: 12 }}>
+        {/* Render differently based on whether it’s a car (has make) or house */}
+        {item.make ? (
+          <>
+            {/* Car item */}
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', textAlign: 'right' }}>
+              {item.year} {item.make} - {item.model}
+            </Text>
+
+            <Text style={{ fontSize: 16, color: '#666', textAlign: 'right', marginTop: 4 }}>
+              {item.kilometers} كم - {item.transmission}⚙️
+            </Text>
+
+            <Text style={{ fontSize: 16, color: '#008000', textAlign: 'right', marginTop: 4 }}>
+              {item.price} أوقية
+            </Text>
+
+            {item.availability === 'sold' ? (
+              <Text style={{ color: '#c00', textAlign: 'right', marginTop: 4, fontWeight: 'bold' }}>
+                تم البيع
+              </Text>
+            ) : null}
+
+            <Text
+              numberOfLines={showFullDescription ? undefined : 3}
+              style={{ fontSize: 14, color: '#555', marginTop: 6, textAlign: 'right' }}
+            >
+              {item.description}
+            </Text>
+
+            {item.description?.length > 100 && (
+              <TouchableOpacity onPress={() => setShowFullDescription(prev => !prev)}>
+                <Text style={{ color: '#007bff', textAlign: 'right', marginTop: 4 }}>
+                  {showFullDescription ? 'عرض أقل ▲' : 'عرض المزيد ▼'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </>
+        ) : (
+          <>
+            {/* House item */}
+            <Text style={{ fontSize: 16, color: '#007bff', marginBottom: 4, textAlign: 'right' }}>
+              📍 {item.area}
+            </Text>
+
+            {item.availability === 'sold' && (
+              <Text style={{ color: 'red', fontWeight: 'bold', marginBottom: 6, textAlign: 'right' }}>🔴 تم البيع</Text>
+            )}
+
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#000', marginBottom: 4, textAlign: 'right' }}>
+              💰 {item.price}
+            </Text>
+
+            <Text style={{ fontSize: 14, color: '#333', marginBottom: 6, textAlign: 'right' }}>
+              🛏 {item.rooms} غرف | 🛁 {item.bathrooms} حمام | 📐 {item.areaSize || '—'} م²
+            </Text>
+
+            <Text numberOfLines={3} style={{ fontSize: 14, color: '#666', marginBottom: 10 }}>
+              {item.description}
+            </Text>
+          </>
+        )}
+
+        {/* Action Buttons */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10, marginTop: 12 }}>
+          <TouchableOpacity
+            onPress={() => Linking.openURL(`tel:+22241872600`)}
+            style={{
+              flex: 1,
+              backgroundColor: '#28a745',
+              padding: 10,
+              borderRadius: 8,
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>📞 اتصال</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => {
+              const message = `مرحباً، أنا مهتم بهذا الإعلان: ${item.id}`;
+              const phoneNumber = '22241872600';
+              const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+
+              Alert.alert('فتح واتساب', 'هل ترغب في فتح واتساب للتواصل؟', [
+                { text: 'إلغاء', style: 'cancel' },
+                {
+                  text: 'فتح',
+                  onPress: () => Linking.openURL(url),
+                },
+              ]);
+            }}
+            style={{
+              flex: 1,
+              backgroundColor: '#25D366',
+              padding: 10,
+              borderRadius: 8,
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>💬 واتساب</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Remove Favorite Button */}
+        <TouchableOpacity
+          onPress={() => removeFavorite(item.id)}
+          style={{ marginTop: 10, padding: 10, backgroundColor: '#f44', borderRadius: 6 }}
+        >
+          <Text style={{ color: 'white', textAlign: 'center' }}>🗑️ حذف من المفضلة</Text>
+        </TouchableOpacity>
+      </View>
     </View>
+  
   );
 
   if (favorites.length === 0) {
     return (
-      <View style={{ padding: 20 }}>
-        <Text style={{ textAlign: 'center', color: '#999' }}>لا توجد عناصر في المفضلة.</Text>
+      <View style={{padding: 20 }}>
+        <Text style={{ textAlign: 'center', color: '#999',marginTop:100,fontSize:20 }}>لا توجد عناصر في المفضلة.</Text>
       </View>
     );
   }
 
   return (
+    <>
     <FlatList
-      data={favorites}
-      keyExtractor={(item) => item.id.toString()}
-      renderItem={renderItem}
-      contentContainerStyle={{ padding: 10 }}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    />
-  );
+     style={{backgroundColor: '#06214e', }}
+        data={favorites}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={renderItem}
+        contentContainerStyle={{ padding: 10 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        ListFooterComponent={<View style={{ height: 60 }} />}
+      />
+
+      {/* Fullscreen image viewer */}
+      {imageViewerVisible && (
+        <Modal visible={imageViewerVisible} transparent={true}>
+          <View style={{ flex: 1, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' }}>
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              contentOffset={{ x: currentImageIndex * Dimensions.get('window').width, y: 0 }}
+            >
+              {selectedImages.map((img, index) => (
+                <Image
+                  key={index}
+                  source={{ uri: img }}
+                  style={{ width: Dimensions.get('window').width, height: 600, marginTop: 120 }}
+                  resizeMode="contain"
+                />
+              ))}
+            </ScrollView>
+            <TouchableOpacity
+              onPress={() => setImageViewerVisible(false)}
+              style={{ position: 'absolute', top: 50, right: 20, backgroundColor: '#fff', padding: 10, borderRadius: 20 }}
+            >
+              <Text style={{ fontSize: 24, color: '#000' }}>✖️</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
+      )}
+     
+    </>
+  ); 
 }
+
+// tsts
+
+
 
 // contact secreen 
 
@@ -1403,62 +1667,176 @@ const ExpandableDescription = ({ text }) => {
 
 
 
-// // post screen 
+
+
 
 // function PostScreen() {
-//   const handleOpenWebsite = (url) => {
-//     Alert.alert(
-//       'فتح موقع الويب',
-//       'هل تريد فتح موقع الويب لإرسال التفاصيل؟',
-//       [
-//         { text: 'إلغاء', style: 'cancel' },
-//         { text: 'فتح', onPress: () => Linking.openURL(url) },
-//       ]
-//     );
+//   const [name, setName] = useState('');
+//   const [phone, setPhone] = useState('');
+//   const [email, setEmail] = useState('');
+//   const [location, setLocation] = useState('');
+//   const [images, setImages] = useState([]);
+//   const [sending, setSending] = useState(false);
+
+//   const pickImages = async () => {
+//     const result = await ImagePicker.launchImageLibraryAsync({
+//       mediaTypes: ImagePicker.MediaTypeOptions.Images,
+//       allowsMultipleSelection: true,
+//       base64: true,
+//       quality: 0.5,
+//     });
+
+//     if (!result.canceled) {
+//       const selected = result.assets.map((asset) => ({
+//         uri: asset.uri,
+//         base64: asset.base64,
+//       }));
+//       setImages((prev) => [...prev, ...selected]);
+//     }
+//   };
+
+//   const resetForm = () => {
+//     setName('');
+//     setPhone('');
+//     setEmail('');
+//     setLocation('');
+//     setImages([]);
+//   };
+
+//   const sendEmail = async () => {
+//     if (!name || !phone || !location || images.length === 0) {
+//       Alert.alert('يرجى تعبئة جميع الحقول المطلوبة (باستثناء البريد الإلكتروني) واختيار صور.');
+//       return;
+//     }
+
+//     setSending(true);
+
+//     try {
+//       const res = await fetch('https://beytee-backend-85c6ebd2be6a.herokuapp.com/send-email', {
+        
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({
+//           name,
+//           phone,
+//           email,
+//           location,
+//           images: images.map((img) => `data:image/jpeg;base64,${img.base64}`),
+//         }),
+//       });
+
+//       if (res.ok) {
+//         Alert.alert('✅ تم الإرسال بنجاح!');
+//         resetForm();
+//       } else {
+//         const errorText = await res.text();
+//         console.error('Backend error:', errorText);
+//         Alert.alert('حدث خطأ أثناء الإرسال. حاول مرة أخرى.');
+//       }
+//     } catch (err) {
+//       console.error('Fetch error:', err);
+//       Alert.alert('حدث خطأ أثناء الإرسال. تأكد من الاتصال بالإنترنت.');
+//     }
+
+//     setSending(false);
 //   };
 
 //   return (
+//     <ScrollView contentContainerStyle={styles.container}>
+//       <Text style={styles.label}>الاسم الكامل *</Text>
+//       <TextInput
+//         style={styles.input}
+//         value={name}
+//         onChangeText={setName}
+//         placeholder="مثال: محمد"
+//       />
 
-   
+//       <Text style={styles.label}>رقم الهاتف *</Text>
+//       <TextInput
+//         style={styles.input}
+//         value={phone}
+//         onChangeText={setPhone}
+//         placeholder="مثال: 22222222"
+//         keyboardType="phone-pad"
+//       />
 
-//     <View style={styles.container}>
+//       <Text style={styles.label}>البريد الإلكتروني (اختياري)</Text>
+//       <TextInput
+//         style={styles.input}
+//         value={email}
+//         onChangeText={setEmail}
+//         placeholder="you@example.com"
+//         keyboardType="email-address"
+//       />
 
-//       <Text style={styles.title}>إرسال إعلان</Text>
+//       <Text style={styles.label}>الموقع *</Text>
+//       <TextInput
+//         style={styles.input}
+//         value={location}
+//         onChangeText={setLocation}
+//         placeholder="مثال: نواكشوط - تفرغ زينه"
+//       />
 
-//       <TouchableOpacity
-//         style={styles.button}
-//         onPress={() => handleOpenWebsite('https://mohamedbaha-keep.github.io/beytee.form/houses/index.html')}
-//       >
-//         <Text style={styles.buttonText}> أريد عرض منزل</Text>
+//       <TouchableOpacity style={styles.imagePicker} onPress={pickImages}>
+//         <Text style={styles.imagePickerText}>📷 اختيار الصور</Text>
 //       </TouchableOpacity>
 
-//       <TouchableOpacity
-//         style={styles.button}
-//         onPress={() => handleOpenWebsite('https://mohamedbaha-keep.github.io/beytee.form/cars/index.html')}
-//       >
-//         <Text style={styles.buttonText}> أريد عرض سيارة</Text>
-//       </TouchableOpacity>
-//     </View>
+//       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 10 }}>
+//         {images.map((img, index) => (
+//           <Image
+//             key={index}
+//             source={{ uri: img.uri }}
+//             style={{ width: 100, height: 100, marginRight: 10, borderRadius: 8 }}
+//           />
+//         ))}
+//       </ScrollView>
+
+//       {sending ? (
+//         <ActivityIndicator size="large" color="#007AFF" />
+//       ) : (
+//         <Button title="إرسال الإعلان" onPress={sendEmail} />
+//       )}
+//     </ScrollView>
 //   );
 // }
 
 
-// end
+// tstst
+
 function PostScreen() {
+  const [type, setType] = useState('house');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [location, setLocation] = useState('');
+  const [make, setMake] = useState('');
+  const [model, setModel] = useState('');
+  const [miles, setMiles] = useState('');
   const [images, setImages] = useState([]);
   const [sending, setSending] = useState(false);
 
+
+
+ 
+
   const pickImages = async () => {
+
+
+const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('يرجى السماح للتطبيق بالوصول إلى الصور');
+      return;
+    }
+
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
       base64: true,
-      quality: 0.5,
+      quality: 0.6,
     });
+
+   
 
     if (!result.canceled) {
       const selected = result.assets.map((asset) => ({
@@ -1469,113 +1847,175 @@ function PostScreen() {
     }
   };
 
+  const removeImage = (index) => {
+    const newImages = [...images];
+    newImages.splice(index, 1);
+    setImages(newImages);
+  };
+
   const resetForm = () => {
     setName('');
     setPhone('');
     setEmail('');
     setLocation('');
+    setMake('');
+    setModel('');
+    setMiles('');
     setImages([]);
   };
 
   const sendEmail = async () => {
-    if (!name || !phone || !location || images.length === 0) {
-      Alert.alert('يرجى تعبئة جميع الحقول المطلوبة (باستثناء البريد الإلكتروني) واختيار صور.');
+    if (!name || !phone || !location || images.length === 0 || (type === 'car' && (!make || !model))) {
+      Alert.alert('يرجى تعبئة جميع الحقول المطلوبة واختيار صور.');
       return;
     }
 
     setSending(true);
 
     try {
-      const res = await fetch('http://192.168.1.130:3000/send-email', {
-        // https://beytee-real-estate-backend-350cea2711d6.herokuapp.com/
+      const res = await fetch('https://beytee-backend-85c6ebd2be6a.herokuapp.com/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          type,
           name,
           phone,
           email,
           location,
+          make,
+          model,
+          miles,
           images: images.map((img) => `data:image/jpeg;base64,${img.base64}`),
         }),
       });
 
       if (res.ok) {
-        Alert.alert('✅ تم الإرسال بنجاح!');
+        Alert.alert('✅ تم الإرسال بنجاح!', 'سيتم التواصل معك قريباً من قبل أحد الوكلاء.');
         resetForm();
       } else {
         const errorText = await res.text();
         console.error('Backend error:', errorText);
-        Alert.alert('حدث خطأ أثناء الإرسال. حاول مرة أخرى.');
+        Alert.alert('حدث خطأ أثناء الإرسال.');
       }
     } catch (err) {
       console.error('Fetch error:', err);
-      Alert.alert('حدث خطأ أثناء الإرسال. تأكد من الاتصال بالإنترنت.');
+      Alert.alert('تحقق من اتصال الإنترنت.');
     }
 
     setSending(false);
   };
 
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.label}>الاسم الكامل *</Text>
-      <TextInput
-        style={styles.input}
-        value={name}
-        onChangeText={setName}
-        placeholder="مثال: محمد"
-      />
 
-      <Text style={styles.label}>رقم الهاتف *</Text>
-      <TextInput
-        style={styles.input}
-        value={phone}
-        onChangeText={setPhone}
-        placeholder="مثال: 22222222"
-        keyboardType="phone-pad"
-      />
 
-      <Text style={styles.label}>البريد الإلكتروني (اختياري)</Text>
-      <TextInput
-        style={styles.input}
-        value={email}
-        onChangeText={setEmail}
-        placeholder="you@example.com"
-        keyboardType="email-address"
-      />
 
-      <Text style={styles.label}>الموقع *</Text>
-      <TextInput
-        style={styles.input}
-        value={location}
-        onChangeText={setLocation}
-        placeholder="مثال: نواكشوط - تفرغ زينه"
-      />
 
-      <TouchableOpacity style={styles.imagePicker} onPress={pickImages}>
-        <Text style={styles.imagePickerText}>📷 اختيار الصور</Text>
+return (
+  <ScrollView contentContainerStyle={styles.container}>
+    {/* Toggle bar */}
+    <View style={styles.toggleContainer}>
+      <TouchableOpacity
+        style={[styles.toggleButton, type === 'house' && styles.activeToggle]}
+        onPress={() => setType('house')}
+      >
+        <Text style={styles.toggleText}>عرض منزل</Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.toggleButton, type === 'car' && styles.activeToggle]}
+        onPress={() => setType('car')}
+      >
+        <Text style={styles.toggleText}>عرض سيارة</Text>
+      </TouchableOpacity>
+    </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 10 }}>
-        {images.map((img, index) => (
-          <Image
-            key={index}
-            source={{ uri: img.uri }}
-            style={{ width: 100, height: 100, marginRight: 10, borderRadius: 8 }}
-          />
-        ))}
-      </ScrollView>
+    {/* Common Fields */}
+    <Text style={styles.label}>* الاسم الكامل</Text>
+    <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="إلزامي" textAlign="right" />
 
-      {sending ? (
-        <ActivityIndicator size="large" color="#007AFF" />
-      ) : (
-        <Button title="إرسال الإعلان" onPress={sendEmail} />
-      )}
+    <Text style={styles.label}>* رقم الهاتف</Text>
+    <TextInput style={styles.input} value={phone} onChangeText={setPhone} placeholder="+222" keyboardType="phone-pad" textAlign="right" />
+
+    <Text style={styles.label}>البريد الإلكتروني (اختياري)</Text>
+    <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="you@example.com" keyboardType="email-address" textAlign="right" />
+
+    <Text style={styles.label}>* الموقع</Text>
+    <TextInput style={styles.input} value={location} onChangeText={setLocation} placeholder="- تفرغ زينه" textAlign="right" />
+
+    {/* Car-specific */}
+    {type === 'car' && (
+      <>
+        <Text style={styles.label}>* الماركة</Text>
+        <TextInput style={styles.input} value={make} onChangeText={setMake} placeholder="Toyota" textAlign="right" />
+        <Text style={styles.label}>* الموديل</Text>
+        <TextInput style={styles.input} value={model} onChangeText={setModel} placeholder=" Corolla 2020" textAlign="right" />
+        <Text style={styles.label}>عدد الكيلومترات</Text>
+        <TextInput style={styles.input} value={miles} onChangeText={setMiles} placeholder= "120000km" keyboardType="numeric" textAlign="right" />
+      </>
+    )}
+
+    {/* Image Picker */}
+    <TouchableOpacity style={styles.imagePicker} onPress={pickImages}>
+      <Text style={styles.imagePickerText}>📷 اختيار الصور</Text>
+    </TouchableOpacity>
+
+    {/* Images Preview */}
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 10 }}>
+      {images.map((img, index) => (
+        <View key={index} style={styles.imageWrapper}>
+          <Image source={{ uri: img.uri }} style={styles.imageThumb} />
+          <TouchableOpacity style={styles.deleteIcon} onPress={() => removeImage(index)}>
+            <Text style={{ color: 'white', fontWeight: 'bold',marginTop:9, }}>✕</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
     </ScrollView>
-  );
+
+    {/* Submit
+    {sending ? (
+      <ActivityIndicator size="large" color="#007AFF" />
+    ) : (
+      <Button title="إرسال الإعلان" onPress={sendEmail} />
+    )} */}
+
+{sending ? (
+  <ActivityIndicator size="large" color="#007AFF" />
+) : (
+  <TouchableOpacity
+    onPress={sendEmail}
+    style={{
+      backgroundColor: '#007AFF',
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 10,
+      alignItems: 'center',
+      marginTop: 10,
+    }}
+  >
+    <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
+      إرسال الإعلان
+    </Text>
+  </TouchableOpacity>
+)}
+
+
+
+
+<View style={styles.whatsappContainer}>
+  <Text style={styles.whatsappText}>أو تواصل معنا مباشرة على واتساب للنشر</Text>
+  <TouchableOpacity
+    style={styles.whatsappButton}
+    onPress={() => {
+      Alert.alert('سيتم الآن فتح واتساب');
+      Linking.openURL('https://wa.me/22241872600').catch(() =>
+        Alert.alert('تعذر فتح واتساب')
+      );
+    }}
+  >
+    <Text style={styles.whatsappButtonText}>واتساب</Text>
+  </TouchableOpacity>
+</View>
+  </ScrollView>
+);
 }
-
-
-
 
 // ------------------------  for carsssss -----------------------------?
 
@@ -2204,25 +2644,97 @@ imagePickerText: {
 },
 
 
-// favorite  
+// for post scree
 
-container: { flexGrow: 1, padding: 20, backgroundColor: '#fff' },
-emptyText: { textAlign: 'center', marginTop: 20, fontSize: 18, color: '#999' },
-item: {
+container: {
+  padding: 20,
+  backgroundColor: '#fff',
+},
+toggleContainer: {
   flexDirection: 'row',
-  justifyContent: 'space-between',
-  padding: 15,
-  borderBottomWidth: 1,
-  borderColor: '#eee',
+  justifyContent: 'space-around',
+  marginBottom: 20,
 },
-title: { fontSize: 16, flex: 1, textAlign: 'right' },
-removeBtn: {
-  backgroundColor: '#c00',
-  borderRadius: 5,
-  paddingHorizontal: 10,
-  justifyContent: 'center',
+toggleButton: {
+ 
+  borderWidth: 1,
+  borderRadius: 8,
+  borderColor: '#ccc',
+  marginTop:40,
+  marginLeft:7,
+  flex: 1,
+  backgroundColor: '#eee',
+  paddingVertical: 10,
+  alignItems: 'center',
 },
-removeBtnText: { color: 'white' },
-
+activeToggle: {
+  backgroundColor: '#007AFF',
+  borderColor: '#007AFF',
+},
+toggleText: {
+  color: '#000',
+},
+label: {
+  textAlign: 'right',
+  fontWeight: 'bold',
+  marginTop: 10,
+},
+input: {
+  borderWidth: 1,
+  borderColor: '#ccc',
+  padding: 10,
+  borderRadius: 8,
+  marginBottom: 10,
+},
+imagePicker: {
+  backgroundColor: '#f0f0f0',
+  padding: 12,
+  borderRadius: 8,
+  alignItems: 'center',
+  marginVertical: 10,
+},
+imagePickerText: {
+  color: '#333',
+  fontWeight: 'bold',
+},
+imageWrapper: {
+  position: 'relative',
+  marginRight: 10,
+},
+imageThumb: {
+  width: 100,
+  height: 100,
+  borderRadius: 8,
+},
+deleteIcon: {
+  position: 'absolute',
+  top: -8,
+  right: -8,
+  backgroundColor: 'red',
+  borderRadius: 12,
+  paddingHorizontal: 5,
+  paddingVertical: 1,
+  zIndex: 10,
+},
+whatsappContainer: {
+  marginTop: 30,
+  alignItems: 'center',
+},
+whatsappText: {
+  textAlign: 'center',
+  marginBottom: 10,
+  color: '#444',
+},
+whatsappButton: {
+  backgroundColor: '#25D366',
+  paddingVertical: 10,
+  paddingHorizontal: 25,
+  borderRadius: 8,
+},
+whatsappButtonText: {
+  color: '#fff',
+  fontSize: 16,
+  fontWeight: 'bold',
+},
 
 });
